@@ -1,0 +1,244 @@
+---
+title: "Week 1 - Part 1: Basic R"
+author: "Dr. Donghyung Lee - Modified by Dr. Ashouri"
+date: "Jan 29, 2025"
+output: 
+  prettydoc::html_pretty:
+    toc: true
+    theme: cayman
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Basic Calculator Operations
+
+You can perform basic arithmetic operations directly.
+```{r}
+2+3*4   # Basic arithmetic
+        # Exponentiation `^`
+log(34) # Logarithm (natural log or ln)
+        # Log10 log10()
+exp(10) # Exponential exp()
+        # Square Root sqrt()
+        # Absolute Value
+        # Round Down floor()
+        # Round Up ceiling()
+
+?log
+```
+You may use `#` (comment symbol) to comment out lines of your code. If you want to comment/uncomment a few lines together, use Ctrl+Shift+C (Windows) or Command+Shift+C (Mac).
+
+## Variable Assignment
+Variables in R can store a variety of data types including numbers, characters, and more. Variables are assigned using the `<-` operator (left-arrow operator). (shortcut: "Alt" + "-" (windows) and "Option"+"-" (mac))
+```{r}
+x <- 23 #Ctrl+enter (windows) Command+enter (mac)
+x=25
+ 
+xx <- x^2
+xx
+
+test <- "Math"
+test
+
+test.score <- 93.24
+test.score
+
+# x <- x + 5
+```
+
+### Naming Conventions
+Variable names should start with a letter and can contain letters, numbers, period(.) and underscore(_) symbol.
+```{r}
+test2 <- 2
+test2
+# 2test <- 3
+# test_2 <- 3
+
+```
+
+## Data Types in R
+
+### Vectors
+
+Vectors can be created using the c() function or seq() for sequences.
+```{r}
+# c() function
+?c
+y <- c(1,3,4,5,3,10,4,3,2) 
+
+y[2] # Extract the 2nd element using index `[n]`
+     # Extract the 2nd to 5th elements
+     # Extract the 2nd, 4th, 6th elements
+     # Extract all but the 2nd element
+     # Extract all but the 3rd through 5th elements
+     # Assign 5 to the 3rd element
+
+# seq() function
+?seq
+yy <- seq(from=0,to=6,by=0.5)
+yy
+
+# If you don't know the function name google for "R compute function name (e.g., mean or standard deviation)"
+mean(y)
+sd(y)
+
+# R uses the notation `[n]' at the beginning 
+# of each output line to indicate which entries are shown on that line.
+test.subjects <- c("Economics","Math","English")
+test.subjects
+```
+
+### Vector Types
+```{r}
+# Numeric Vector (identical to double)
+z <- 1:4
+z
+class(z)
+
+zz <- c(1.3, 2.2, 3.3)
+class(zz)
+
+# Character Vector
+w <- c("a","b","c")
+class(w)
+
+Grade <- c("freshman", "sophomore", "junior", "senior")
+class(Grade)
+
+# Logical Vector
+h <- c(TRUE, TRUE, FALSE)
+class(h)
+TRUE == 1
+FALSE == 0
+
+treatment <- c("A","B","C","A","B","C")
+class(treatment)
+
+video <- c(47, 63, 58, 53, 53, 63, 53, 39, 58, 50)
+video
+video > 55 # Is the value of each element greater than 55?
+vv <- video > 55
+vv
+
+# interpret the output from the following command
+sum(video > 50)
+
+# [Practice] 
+# How can we get R to calculate the mean of only those elements
+# of scores that are above 55?
+
+```
+
+### Matrices
+
+Matrices in R must have elements of the same type.
+```{r}
+mat <- matrix(c(seq(1,17,1),rep(2,3)),nrow=4) # filled by columns
+mat
+
+mat2 <- matrix(c(seq(1,17,1),rep(2,3)),nrow=4,byrow=TRUE) # filled by rows
+mat2
+
+mat2[2,3] # Access element at row 2, column 3 using a [row,col] index pair
+mat2[,2]
+mat2[1,]
+class(mat2[,4])
+
+# However, matrix could not have a mix of numeric and characteristic columns. Only supports one type of object. 
+mat3 <- matrix(c(seq(1,17,1),rep("2",3)),nrow=4) ## it turns all the objects to character
+mat3
+class(mat3[,2])
+```
+
+### Arrarys
+
+Arrays are multi-dimensional data structures that are conceptually similar to matrices, but they can have more than two dimensions.
+```{r}
+array1 <- array(1:8,c(2,4))
+array1
+
+array("1",c(2,4))
+
+array2 <- array(seq(1,30,1),c(2,3,5))
+array2
+array2[1,1,1]
+```
+
+### Data Frames
+
+Data frames are similar to matrix but they allow for columns of different types.
+
+```{r}
+matrix(c(seq(1,3,1),c("A","B","C")),nrow=3)
+
+test.data <- data.frame(Subjects=c("Economics","Math","English"),
+                        Registered=c(TRUE,TRUE,FALSE),
+                        Score=c(89,93,NA))
+test.data
+str(test.data) # display the structure of an arbitrary R object
+class(test.data$Registered)
+class(test.data$Score)
+class(test.data$Subjects)
+```
+
+
+### Factor 
+
+Factors are used for categorical variables and can be nominal (no order) or ordinal (ordered).
+
+Categorical variable: 
+
+1. without order --nominal -- Red, Blue, Orange                       
+2. with order --  ordinal -- Freshman Sophomore, Junior,Senior
+https://online.stat.psu.edu/stat200/lesson/1/1.1/1.1.1
+
+                     
+Refer to this website for more details
+
+* Berkeley:https://www.stat.berkeley.edu/~s133/factors.html
+* UCLA: https://stats.idre.ucla.edu/r/modules/factor-variables/
+
+```{r}
+# Nominal factor
+color.vec <- c("Red","Blue","Orange","Blue","Red")
+class(color.vec)
+color.fac <- factor(color.vec)
+color.fac
+```
+
+* Factors have levels, which define the set of possible values the factor can have.
+* The levels in the factor variable are sorted alphabetically based on the unique elements found in 'color.vec'.
+
+```{r}
+factor(color.vec,levels=c("Red","Blue","Orange"))
+# Change the factor labels
+x <- c(1,2,4,2,4,2,5,3,2,3,4,1)
+class(x)
+factor(x)
+factor(x,labels=c("A","B","C","D","E"))
+
+# change both levels and labels
+factor(x,labels=c("A","B","C","D","E"), levels = c(1, 3, 4, 2, 5))
+```
+
+```{r}
+# Ordinal factor
+ordered(color.vec)
+ordered(color.vec,levels=c("Red","Blue","Orange"))
+```
+
+Advantages of using factor variables:
+
+1. Useful in statistical models, DF can be computed correctly.
+2. Useful in different types of graphics.
+3. Factors are integers internally. Storing string variables as factor variables is more memory-efficient. 
+
+
+
+
+
+
