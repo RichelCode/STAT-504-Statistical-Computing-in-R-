@@ -1,0 +1,191 @@
+---
+title: "Week 2 - Part 2: Visualizing Frequency/Amount - Bar Graph \n(Fundamentals of dataVis: Chapter 6)"
+author: "Dr. Donghyung Lee - Modified by Dr. Ashouri"
+date: "February 05, 2025"
+output: 
+  prettydoc::html_pretty:
+    toc: true
+    theme: cayman
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages
+```{r}
+library(tidyverse)
+```
+
+# 1. Visualizing Frequency
+
+```{r}
+head(diamonds)
+
+#diamonds$clarity
+class(diamonds$clarity)
+levels(diamonds$clarity)
+table(diamonds$clarity)
+```
+
+* What should we do with the "clarity" variable? 
+* What is the type of the "clarity" variable?
+* It is qualitative, i.e., (descriptions of groups or things). 
+* Count how many diamonds are there in each type of "clarity"
+* Let's make a bargraph with "geom_bar"
+* https://ggplot2.tidyverse.org/reference/geom_bar.html
+
+## 1.1 Using the original data - geom_bar()
+
+* Specify what variable you're interested with. 
+* geom_bar() will display the groups in the x axis and the frequency of the group in the y axis (default: stat = "count" - it expects no y values)
+* When you provide only the x aesthetic, geom_bar() assumes you want a count of each category in the x variable (clarity). This behavior is the default when no y aesthetic is provided.
+```{r}
+?geom_bar
+ggplot() +
+  geom_bar(aes(x=clarity), data=diamonds)
+```
+
+## 1.2 Using summarized data
+
+* How is the bargraph created?
+* Other ways to create the same graph?
+
+```{r}
+?table
+# table uses cross-classifying factors to build a contingency table of the counts at each combination of factor levels.
+table(diamonds$clarity)
+clarity_df <- data.frame(table(diamonds$clarity))
+clarity_df
+str(clarity_df)
+```
+
+* Try use "clarity_df" to create the bargraph by yourself
+* `geom_bar()` assumes you want to count the number of rows for each x value (i.e., it does not automatically use the Freq column to determine bar height unless you specify it).
+
+```{r}
+ggplot()+
+  geom_bar(aes(x=Var1),data=clarity_df)
+```
+
+* It counts the number of rows for each group, which is 1.
+* By changing the default `stat = "count"` to `stat = "identity"` (Uses the y-values as they are in the dataset, without any aggregation), you're asking it to skip aggregation and use the y-values you provide directly.
+
+```{r}
+ggplot() +
+    geom_bar(aes(x=Var1, y=Freq), data=clarity_df,
+             stat="identity") +
+    labs(x="Clarity", y="Frequency")
+```
+
+### 1.2.1 Using the "geom_col()"
+
+* https://ggplot2.tidyverse.org/reference/geom_bar.html
+* `geom_col()` uses `stat = "identity"`, meaning it leaves the data unchanged. It expects you to provide the y-values directly, as they won't be calculated or aggregated automatically. 
+* `geom_col()` will always plot the y-values you supply, so you must ensure they're provided.
+
+```{r}
+p1 <- ggplot()+
+  geom_col(aes(x=Var1,y=Freq),data=clarity_df)+
+    labs(x="Clarity", y="Frequency")
+
+p1
+```
+
+* There are two types of bar charts: `geom_bar()` and `geom_col()`. 
+* `geom_bar()` makes the height of the bar proportional to the number of cases in each group (or if the weight aesthetic is supplied, the sum of the weights). 
+* If you want the heights of the bars to represent values in the data, use `geom_col()` instead. 
+* `geom_bar()` uses `stat_count()` by default: it counts the number of cases at each x position.
+* `geom_col()` uses `stat_identity()`: it leaves the data as is.
+
+
+## 1.3 Display the bars horizontally
+
+* Add the `coord_flip()` layer to the plot.
+* Or switch the x and y variables.
+
+```{r}
+p1 + coord_flip()
+```
+
+# 2. Visualizing Amount
+
+
+## 2.1 Through "stat_summary()"
+
+* Summarise `y` values at unique/binned `x`.
+* https://ggplot2.tidyverse.org/reference/stat_summary.html
+* Question: Visualize the mean price for each type of cut.
+
+```{r}
+?stat_summary
+
+ggplot() +
+  stat_summary(aes(x=cut, y=price), data=diamonds,
+               fun="mean", geom="bar")
+```
+
+## 2.2 Create the summary data first, then plot
+
+### [IMPORTANT] The pipe, `%>%`
+
+* The pipe, `%>%`, comes from the magrittr package (the aim of the package is to decrease development time and to improve readability and maintainability of code) 
+* You can pronounce the symbol `%>%` as "then". 
+* Behind the scenes, x %>% f(y) turns into f(x, y), and x %>% f(y) %>% g(z) turns into g(f(x, y), z) and so on. 
+
+### [IMPORTANT] "group_by()"
+
+* **group the data according to one/more variables:** The `group_by()` function organizes the data into groups based on the unique values of one or more specified variables. This is often used as a precursor to performing aggregate operations like summing, counting, or calculating averages for each group.
+* **grouping doesn't change how the data looks (apart from listing how it's grouped):** After grouping, the data remains in its original format, but it gains an attribute indicating how it is grouped. This means that while the data might appear similar to its ungrouped form, operations on it (e.g., summaries or transformations) will now be applied group by group.
+
+```{r}
+diamonds2 <- diamonds %>% group_by(clarity)
+head(diamonds)
+head(diamonds2)
+
+clarity_summary <- diamonds2 %>% 
+  summarise(clarity.median=median(price),
+            clarity.mean=mean(price),
+            n=n())
+
+clarity_summary
+```
+
+### summarise() + geom_bar(stat = "identity")/geom_col() vs stat_summary()
+
+```{r}
+#compare the data
+clarity_df
+clarity_summary
+
+# Other calculations
+diamonds %>% 
+  filter(clarity=="I1") %>% 
+  group_by(cut) %>% 
+  summarise(cut.median=median(price),
+            cut.mean=mean(price),
+            n=n())
+
+
+# compare the graphs
+# graph generated by "stat_summary"
+ggplot()+
+  stat_summary(aes(x=clarity,y=price),fun="median",geom="bar",data=diamonds)
+
+ggplot(aes(x=clarity),data=diamonds)+
+  stat_summary(aes(y=price),fun="median",geom="bar")
+
+
+# graph with the new data using geom_bar() and stat = "identity"
+clarity_summary
+ggplot()+
+  geom_bar(aes(x=clarity,y=clarity.median),
+           stat="identity",data=clarity_summary)
+
+# graph with the new data - using geom_col()
+ggplot()+
+  geom_col(aes(x=clarity,y=clarity.median),data=clarity_summary)
+
+```
+

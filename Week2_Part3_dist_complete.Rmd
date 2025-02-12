@@ -1,0 +1,340 @@
+---
+title: "Week 2 - Part 3: Visualizing Distribution \n(Fundamentals of dataVis: Chapter 7)"
+author: "Dr. Donghyung Lee - Modified by Dr. Ashouri"
+date: "February 10, 2025"
+output: 
+  prettydoc::html_pretty:
+    toc: true
+    theme: cayman
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages
+```{r}
+library(tidyverse)
+```
+
+# 1. Histograms
+
+* An approximate representation of the distribution of numerical data.
+* It is used to analyze a continuous variable (quantitative variable) by grouping the data into intervals (bins).
+* The x-axis represents the intervals, while the y-axis shows the frequency or count of data points within each interval.
+* Helps to identify patterns, such as the shape of the data distribution (e.g., normal, skewed, or uniform), and highlights outliers or trends.
+* https://ggplot2.tidyverse.org/reference/geom_histogram.html
+
+## 1.1 geom_histogram()
+```{r}
+?geom_histogram
+ggplot() +
+  geom_histogram(aes(x=price), data=diamonds)
+
+# Note: `bins=30` is the default. 
+```
+## 1.2 Change color/binwidth
+
+* Adjusting Bins: You can customize the number of bins using the `bins` argument or set a specific width for the bins using the `binwidth` argument.
+* Styling: Use the color argument to set the outline color of the bars and the fill argument to specify the fill color inside the bars.
+
+```{r}
+ggplot() +
+  geom_histogram(aes(x=price), color="blue", fill="lightblue" , data=diamonds,
+                 bins=100)
+```
+
+### 1.2.1 Use "fill" instead of "color"
+
+* color: control the outline or border color of geometric shapes - When specified outside `aes()`, it applies a single, fixed color to all elements.
+* fill: control the interior color of closed geometric shapes - When specified outside `aes()`, it applies a single, fixed color to all elements.
+
+```{r}
+ggplot() +
+  geom_histogram(aes(x=price), color="blue", fill="lightblue", data=diamonds,
+                 binwidth = 500)
+```
+
+### 1.2.2 Change the binwidth
+```{r}
+ggplot() +
+  geom_histogram(aes(x=price), color="blue", fill="lightblue", data=diamonds,
+                 binwidth = 100)
+```
+
+### 1.2.3 Change the number of bins
+```{r}
+ggplot() +
+  geom_histogram(aes(x=price), color="blue", fill="lightblue", data=diamonds,
+                 bins=100)
+```
+
+### 1.2.4 "fill" mapping inside aes()
+
+* `fill` Mapping in `aes()`: The `fill` aesthetic inside `aes()` is used to map a variable to the fill color of elements, such as bars in a histogram.
+* Follow a similar rule as `color` when specifying aesthetic options inside and outside `aes()`
+
+```{r}
+ggplot()+
+  geom_histogram(aes(x=price, fill=clarity),
+                bins=120, data=diamonds)
+```
+
+### 1.2.5 Use `facet_grid()` vertical direction
+
+```{r, fig.width=6, fig.height=10}
+ggplot()+
+  geom_histogram(aes(x=price, fill=clarity),
+                 bins=120, data=diamonds) +
+  facet_grid(clarity~.)
+```
+
+# 2. Density Plots
+
+* What is the density function? it represents the probability distribution of a continuous random variable, illustrating how values are distributed across the range of possible outcomes.
+* Density plots are smoother versions of histograms, providing a continuous curve to visualize the underlying distribution of the data.
+* https://en.wikipedia.org/wiki/Probability_density_function
+* What is kernel density estimate? it is a non-parametric technique used to estimate the probability density function of a random variable based on a finite sample of data. It smoothens the data to produce a continuous curve.
+* https://en.wikipedia.org/wiki/Kernel_density_estimation
+
+## 2.1 geom_density()
+* https://ggplot2.tidyverse.org/reference/geom_density.html
+* Default bandwidth is the standard deviation of the smoothing kernel 
+
+```{r}
+?geom_density
+
+ggplot() +
+  geom_density(aes(x=carat), data=diamonds)
+
+```
+
+### 2.2 Change bandwidth/size of the line
+
+* Change the value for "size=" and "adjust="/"bw="
+* Try size=0.5, 1, 2, etc 
+* Try adjust=0.2, 1, 3, 6, etc/Try bw = 0.2, 0.1, 0.05, etc
+* `adjust`: acts as a multiplier for the default bandwidth. It adjusts the bandwidth proportionally rather than setting it explicitly.
+* `bw`: specifies the bandwidth of the kernel, which determines the width of the smoothing window. A smaller `bw` results in a more detailed (less smooth) density curve, while a larger `bw` produces a smoother curve.
+
+```{r}
+ggplot() +
+  geom_density(aes(x=carat), size=1, adjust=2, data=diamonds)
+
+ggplot() +
+  geom_density(aes(x=carat), size=1, bw = 0.1, data=diamonds)
+```
+
+### 2.3 Stackability
+
+* Using lines instead of bars (e.g. histogram) has the advantage of stackability 
+* Stackable plots allow for better comparison of cumulative trends or distributions across different categories without overcrowding the plot.
+
+```{r}
+ggplot() +
+  geom_histogram(aes(x=carat, fill=cut),
+                 bins=120,
+                 data=diamonds)
+ggplot() +
+  geom_density(aes(x=carat, color=cut),
+               size=1, adjust=2, data=diamonds)
+
+ggplot(data=diamonds, aes(x=carat)) +
+  geom_density(aes(color=cut),
+               size=1, adjust=2)
+```
+
+# 3. Boxplots
+
+* What is `boxplot`? A boxplot is a graphical representation that summarizes the distribution of a continuous variable by displaying its key statistical measures.
+* https://en.wikipedia.org/wiki/Box_plot
+* The `boxplot` compactly displays the distribution of a continuous variable.
+* It visualizes five summary statistics (the minimum, the maximum, the median, the first and third quartiles), and all "outlying" points individually.
+* https://ggplot2.tidyverse.org/reference/geom_boxplot.html
+
+## 3.1 Simple boxplot for price
+
+```{r}
+?geom_boxplot
+ggplot()+
+  geom_boxplot(aes(y=price),data=diamonds)
+
+# Median, hinge: (Q1, Q3), whiskers: (Q1-1.5*IQR, Q3+1.5*IQR) 
+# IQR: interquartile range, IQR=Q3-Q1
+# Outliers
+```
+
+## 3.2 Side-by-side for each clarity category
+
+### 3.2.1 Map `color`&`fill` to `clarity`
+```{r}
+ggplot()+
+  geom_density(aes(x=price,color=clarity, fill=clarity),
+               alpha = 0.4,
+               data=diamonds)
+```
+
+### 3.2.2 facet_grid()
+
+* It arranges the facets in a grid based on two categorical variables, one for rows and one for columns.
+* You specify the variables for rows and columns using the syntax facet_grid(rows ~ columns).
+
+```{r, fig.height=8, fig.width=4}
+ggplot()+
+  geom_density(aes(x=price,fill=clarity),data=diamonds)+
+  facet_grid(clarity~.)
+
+# Here, using `fill=clarity` does not provide any additional information
+
+ggplot()+
+  geom_density(aes(x=price),data=diamonds)+
+  facet_grid(clarity~.)
+
+```
+
+### 3.2.3 facet_wrap()
+
+* It arranges the facets in a single row or column, wrapping into multiple rows or columns as needed, depending on the number of facets.
+* You specify a single categorical variable to facet by, and `facet_wrap` automatically handles the layout, wrapping the facets into multiple rows or columns if necessary.
+* You can control the number of rows or columns with the `nrow` or `ncol` arguments.
+
+```{r, fig.height=8, fig.width=4}
+ggplot()+
+  geom_density(aes(x=price),data=diamonds)+
+  facet_wrap(clarity~., ncol=2)
+
+```
+
+### 3.2.4 Use geom_boxplot()
+```{r}
+ggplot()+
+  geom_boxplot(aes(x=clarity,y=price),data=diamonds)+
+  coord_flip()
+```
+
+* Any problems with the data? 
+* Is there an alternative way to view this?
+* Dark dot, lines on the top/right hand side. 
+* not sure the distributions exactly, etc. 
+
+## 3.3 Use options
+
+* Change scale, color, fill, shape and size of outlier, orientation, etc
+
+```{r}
+ggplot()+
+  geom_boxplot(aes(x=clarity,y=log10(price),
+                   fill=cut), outlier.shape = 3,
+               outlier.size = 0.2,
+               data=diamonds)+
+  coord_flip()+
+  labs(x="Clarity",
+       y="Price (log 10 of USD)",
+       fill="Diamonds Cut",
+       title="Boxplot of Prices by Clarity")+
+  theme(plot.title=element_text(hjust=0.5)) #Center the title
+```
+
+* Remove the outliers using ` outlier.shape = NA`
+
+```{r}
+ggplot()+
+  geom_boxplot(aes(x=clarity,y=log10(price),
+                   fill=cut), outlier.shape = NA,
+               data=diamonds)+
+  coord_flip()+
+  labs(x="Clarity",
+       y="Price (log 10 of USD)",
+       fill="Diamonds Cut",
+       title="Boxplot of Prices by Clarity")+
+  theme(plot.title=element_text(hjust=0.5)) #Center the title
+```
+
+## 3.4 Advantages and Disadvantages of boxplot
+
+* **Advantage:** view five number summaries very straight forward, makes comparison easy. Allows for quick identification of outliers and the spread of data.
+* **Disadvantage:** Not reflect the whole information of the distribution. It may be less useful for datasets with a complex or multi-modal distribution since it summarizes data in a simplified form.
+
+
+# 4. Violin Plots
+
+* Violin plots are similar to box plots, but they provide more information. In addition to showing the five-number summary (like a box plot), they also display the distribution of the data by showing the kernel density estimation (a smoothed curve) on both sides of the box. This gives a clearer sense of the distribution's shape, showing where data points are concentrated.
+* Violin plots also allow for the visualization of the data's symmetry or skewness and can show multiple distributions side by side for comparison.
+* https://en.wikipedia.org/wiki/Violin_plot
+* https://ggplot2.tidyverse.org/reference/geom_violin.html
+
+## 4.1 Intro: geom_violin()
+```{r}
+?geom_violin # By default, it only display the mirrored probability density.
+ggplot()+
+  geom_violin(aes(x=cut,y=carat),data=diamonds)
+```
+
+### 4.1.1 Add coord_flip()
+```{r}
+ggplot()+
+  geom_violin(aes(x=cut,y=carat),data=diamonds)+
+  coord_flip()
+```
+
+### 4.1.2 Add more
+```{r}
+ggplot() +
+  geom_violin(aes(x=cut,y=carat),data=diamonds,
+              color="grey", fill="lightblue") + #add color and fill
+  coord_flip() + 
+  theme_bw() + #use a complete theme
+  labs(x="Cut Quality",
+       y="Carat Weight",
+       title="Violin Plots of Diamond Weights by Cut Quality") +
+  theme(plot.title=element_text(hjust=0.5)) #Center the title
+
+# color: controls the color of the border, fill controls what 
+# fill: controls what color fills the violin
+# theme_bw(): change the theme of the background
+# The smoothing/adjusting the bandwidth using `bw=`/`adjust=` (similar to the density plot)
+```
+
+## 4.2 Combine violins with boxplots
+```{r}
+ggplot()+
+  geom_boxplot(aes(x=cut,y=log10(carat)),width=.1,
+               color="black",fill="white",data=diamonds)+
+  geom_violin(aes(x=cut,y=log10(carat)),
+              color="black",fill="lightblue",data=diamonds)+
+  coord_flip()+
+  theme_classic()+
+  labs(x="Cut Quality",
+       y="log10 of Carat Weight",
+       title="Violin Plots of Diamond Weights by Cut Quality") +
+  theme(plot.title=element_text(hjust=0.5)) #Center the title
+
+# Anything wrong? How to fix it?
+```
+## 4.3 Other Options
+
+* You can also customize the graph by changing color, scale, fill, etc
+* scale_fill_manual() for box plot, bar plot, violin plot, dot plot, etc
+* Switch the `geom_boxplot()` and `geom_violin()` layers to display the boxplots on top of the violin plots.
+
+```{r}
+ggplot()+
+  geom_violin(aes(x=cut,y=log10(carat),fill=cut),
+              color="black",data=diamonds)+
+  # Using the `width=` argument will adjust the width of the boxes in the boxplot.
+  geom_boxplot(aes(x=cut,y=log10(carat)),width=.1,
+               color="black",fill="white",data=diamonds)+
+  coord_flip()+
+  theme_classic()+
+  labs(x="Cut Quality",
+       y="log10 of Carat Weight",
+       fill="Cut Quality",
+       title="Violin Plots of Diamond Weights by Cut Quality") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73",
+                               "#F0E442", "#0072B2"))
+
+# Although the colors do not provide any additional information here!
+```
+

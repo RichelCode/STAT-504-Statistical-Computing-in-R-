@@ -1,6 +1,6 @@
 ---
 title: "STAT 504-IC 1"
-author: "Richel"
+author: "Richel Attafuah"
 date: "`r Sys.Date()`"
 output: html_document
 ---
