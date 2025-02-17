@@ -1,0 +1,446 @@
+---
+title: "Week 3 - Part 2: Displays for Bivariate Categorical Data (Fundamentals of datavis: Chapter 6)"
+author: "Dr. Mahsa Ashouri"
+date: "02/17/2025"
+output: 
+  prettydoc::html_pretty:
+    toc: true
+    theme: cayman
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages
+```{r}
+library(tidyverse)
+```
+
+# Explore the data
+```{r}
+# Select two categorical variables
+table(diamonds$clarity, diamonds$cut)
+cc_summary <- data.frame(table(diamonds$clarity, diamonds$cut))
+head(cc_summary)
+names(cc_summary)
+colnames(cc_summary) <- c("clarity","cut","freq")
+head(cc_summary)
+```
+
+# 1. Stacked Bargraphs
+
+* A standard bargraph displays a single categorical variable in the form of bars.
+* Show breakdown of a second categorical variable within each bar.
+* These charts are ideal for showing changes over time or comparing categories.
+
+## 1.1 Height represents frequency
+
+### 1.1.1 Original data
+```{r}
+# Standard bargraph
+ggplot()+
+  geom_bar(aes(x=cut), stat="count",data=diamonds) +
+  labs(x="Cut Quality", y="Count")
+
+# Stacked bargraph: add clarity to the graph
+ggplot()+
+  geom_bar(aes(x=cut,fill=clarity),data=diamonds) +
+  labs(x="Cut Quality", y="Count", fill="Clarity")
+
+# by default, stat="count" & position="stack" - no need to specify `y` variable
+
+ggplot()+
+  geom_bar(aes(x=cut,fill=clarity),
+           stat="count",position="stack",data=diamonds) +
+  labs(x="Cut Quality", y="Count", fill="Clarity")
+
+# stat="count": This parameter specifies that the bars should represent counts of records for each level of the cut variable.
+# position="stack": Stacks bars on top of each other for each cut group based on the clarity levels.
+
+```
+
+### 1.1.2 Summarized data
+
+* Set stat="identity" (it leaves the data as is)
+
+```{r}
+head(cc_summary)
+# Need to specify `y` variable as frequency
+ggplot()+
+  geom_bar(aes(x=cut,y=freq,fill=clarity),
+           stat="identity",position="stack",data=cc_summary) +
+  labs(x="Cut Quality", y="Count", fill="Clarity") +
+  theme_minimal()
+```
+
+### 1.1.3 Any problems?
+
+* Factor vs Ordered Factor
+* Qualitative color scheme vs Color gradients (smoooth transition of colors)
+* When an ordered factor is used to fill the bars in a stacked bar plot, the default color scheme is often a gradient of colors that helps to indicate the ordering of the levels. 
+
+```{r}
+class(cc_summary$clarity)
+class(diamonds$clarity)
+#diamonds$clarity
+#cc_summary$clarity
+
+cc_summary$clarity=ordered(cc_summary$clarity,levels=c("I1","SI2","SI1","VS2","VS1","VVS2","VVS1","IF"))
+class(cc_summary$clarity)
+
+ggplot()+
+  geom_bar(aes(x=cut,y=freq,fill=clarity),
+           stat="identity",position="stack",data=cc_summary) +
+  labs(x="Cut Quality", y="Count", fill="Clarity") +
+  theme_minimal()
+```
+
+
+## 1.2 Proportional Stacked Bar Graph
+
+### 1.2.1 Original data
+
+* Question: Show the distribution of clarity levels within each cut quality.
+* Copy the stack case above and change the "stack" to "fill"
+* The plot displays the proportion of each clarity level within each category of cut quality. Although it utilizes the 'count' statistic to calculate these proportions, the cumulative height of the differently-colored bars represents proportions rather than raw counts.
+```{r}
+ggplot()+
+  geom_bar(aes(x=cut,fill=clarity),
+           stat="count",position="fill",data=diamonds)+
+  labs(x="Cut Quality", y="Proportion", fill="Clarity")+
+  theme_minimal()
+```
+
+
+### 1.2.2 Summarized data
+
+* Set stat="identity"
+
+```{r}
+ggplot()+
+  geom_bar(aes(x=cut,y=freq,fill=clarity),
+           stat="identity",position="fill",data=cc_summary)+
+  labs(x="Cut Quality", y="Proportion", fill="Clarity")+
+  theme_minimal()
+```
+
+### 1.2.3 Multiple histograms with proportional representation
+
+* Similar idea can be applied to multiple histograms with proportional representation
+
+```{r}
+ggplot()+
+  geom_histogram(aes(x=carat),binwidth=.1, data=diamonds)+
+  facet_grid(cut ~ .)
+
+ggplot()+
+  geom_histogram(aes(x=carat,y=..density..),binwidth=.1, data=diamonds)+
+  facet_grid(cut ~ .)
+#..density.. is a special variable in ggplot, can also try ..count..
+#..density.. : show the density (estimated frequency divided by the bin width) 
+
+ggplot()+
+  geom_histogram(aes(x=carat,y=..count..),binwidth=.1, data=diamonds)+
+  facet_grid(cut ~ .)
+# by default, y=..count..
+```
+
+# 2. Grouped bargraphs (dodged bargraphs)
+
+* Set position="dodge".
+* "dodge" display the graph side by side.
+* You may also omit stat="count".
+
+## 2.1 dodged bar graph
+```{r}
+ggplot()+
+  geom_bar(aes(x=cut, fill=clarity), 
+           stat="count",position ="dodge",
+           data=diamonds) +
+  labs(x="Cut Quality", y="Count", fill="Clarity")+
+  theme_minimal()
+```
+
+## 2.2 Similar information via facet_grid()
+
+* The `scale="free_y"` setting allows each row of facets to independently determine its y-axis scale, separate from other rows (also, `scale = "free_x"` allows each facet to have its x-axis scale independently adjusted based on the data within that facet.). 
+
+```{r, fig.height=6, fig.width=5}
+ggplot()+
+  geom_bar(aes(x=clarity, fill=clarity), 
+           data=diamonds)+
+  facet_grid(cut~.,scale="free_y") +
+  labs(x="Clarity", y="Count", fill="Clarity") +
+  theme_minimal()
+```
+
+# 3. Adding numbers on top of graphs
+
+## 3.1 Bargraph
+
+* `geom_text()` - Text geoms are useful for labeling plots. They can be used by themselves as scatterplots or in combination with other geoms, for example, for labeling points or for annotating the height of bars.
+* https://ggplot2.tidyverse.org/reference/geom_text.html
+
+```{r}
+?geom_text
+# You can modify text alignment with the `vjust` and `hjust` aesthetics. 
+# These can either be a number between 0 (right/bottom) and 1 (top/left) or a character ("left", "middle", "right", "bottom", "center", "top"). 
+# There are two special alignments: "inward" and "outward". Inward always aligns text towards the center, and outward aligns it away from the center.
+ggplot() +
+  geom_bar(aes(x=cut),data=diamonds, fill="grey") +
+  geom_text(aes(x=cut,label=..count..),data=diamonds,
+            stat="count",vjust=-0.25) +
+  labs(x="Cut Quality", y="Count") +
+  theme_classic()
+
+# label=..count..: label each bar with the corresponding count of observations.
+# vjust: adjust where to put the numbers (vertical adjustment) 
+```
+
+### 3.1.1 Make the code simpler
+
+```{r}
+ggplot(aes(x=cut),data=diamonds) +
+  geom_bar(fill="grey") +
+  geom_text(aes(label=..count..),
+            stat="count",vjust=-0.25) +
+  labs(x="Cut Quality", y="Count") +
+  theme_classic()
+```
+
+### 3.1.2 Percentage value above each bar
+
+```{r}
+ggplot(aes(x=cut),data=diamonds) +
+  geom_bar(aes(y=(..count..)/sum(..count..)),
+           fill="grey") +
+  geom_text(aes(y=(..count..)/sum(..count..),
+                label=scales::percent(round((..count..)/sum(..count..),2))), 
+            stat="count",
+            vjust=-0.25,
+            color="red") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x="Cut Quality", y="Percentage") +
+  theme_classic()
+
+# round(0.1234, 2) # round the number to two decimal places
+# scales::percent(0.12) - Label percentages (12%, 50%, etc)
+```
+
+## 3.2 Stacked Bargraph
+
+### 3.2.1 Prep Data
+
+```{r}
+good.diamonds <- diamonds %>% 
+  filter(cut=="Very Good"|cut=="Premium"|cut=="Ideal") %>%
+  # Or use the following
+  # filter(cut %in% c("Very Good", "Premium", "Ideal")) %>%
+  filter(clarity!="I1" & clarity!="IF") %>%
+  # Or use the following
+  # filter(!clarity %in% c("I1", "IF")) %>%
+  droplevels() # drop unused levels from a factor
+
+table(good.diamonds$cut)
+table(good.diamonds$clarity)
+```
+
+### 3.2.1 Add geom_text()
+```{r}
+ggplot(aes(x=clarity),data=good.diamonds)+
+  geom_bar(aes(fill=cut),position="stack")+
+  geom_text(aes(label=..count..,group=cut),   # you need `group=cut` here
+            stat="count", vjust=-1) +
+  labs(x="Clarity", y="Count", fill="Cut Quality") +
+  theme_classic()
+
+# The `group=cut` is necessary here to ensure that the counts are calculated and displayed for each segment (i.e., each cut quality within each clarity level)
+```
+
+### 3.2.2 adjust the display of the numbers (position="stack")
+
+* Use position_stack()
+* position: change the positions of where you want to put the number.
+
+```{r}
+# ?position_stack: position_stack() stacks bars on top of each other
+
+library(viridisLite) # Color maps designed to improve graph readability for readers with common forms of color blindness and/or color vision deficiency
+plasma(10) # Generate 10 Plasma colors - This function (here `plasma`) creates a vector of n equally spaced colors along the selected color map.
+
+ggplot(aes(x=clarity),data=good.diamonds)+
+  geom_bar(aes(fill=cut),position="stack")+
+  geom_text(aes(label=..count..,group=cut),
+            stat="count",
+            position=position_stack(vjust=0.5), # You need this one
+            size=4,
+            color="white") +
+  scale_fill_manual(values=c("#7301A8FF","#D8576BFF","#FDC926FF")) +
+  labs(x="Clarity", y="Count", fill="Cut Quality") +
+  theme_classic()
+
+# vjust=0: The label will be justified at the bottom of each segment.
+# vjust=1: The label will be justified at the top of each segment.
+# vjust=0.5: The label will be justified in the middle of each segment.
+```
+
+### 3.2.3 adjust the display of the numbers (position="dodge")
+
+* Use position_dodge()
+* The width parameter specifies how much the items should be dodged (i.e., separated) from each other. The width is relative to the default width of the items.
+* The default width of bars in a bar graph is 0.9 units
+
+```{r}
+# ?position_dodge
+
+ggplot(aes(x=clarity),data=good.diamonds)+
+  geom_bar(aes(fill=cut),position="dodge")+
+  geom_text(aes(label=..count.., group=cut),
+            stat="count",
+            position=position_dodge(width=0.9),
+            #vjust=-0.25,
+            hjust=-0.1,
+            angle=90,
+            size=3) +
+  scale_fill_manual(values=c("#7301A8FF","#D8576BFF","#FDC926FF")) +
+  #coord_flip() +
+  scale_y_continuous(limits=c(0, 6000)) +
+  labs(x="Clarity", y="Count", fill="Cut Quality") +
+  theme_classic()
+
+
+# flip coordinates - using `coord_flip()`
+
+ggplot(aes(x=clarity),data=good.diamonds)+
+  geom_bar(aes(fill=cut),position="dodge")+
+  geom_text(aes(label=..count..,group=cut),
+            stat="count",
+            position=position_dodge(width=0.9),
+            #vjust=-0.25,
+            hjust=-0.1,
+            angle=0,
+            size=3) +
+  scale_fill_manual(values=c("#7301A8FF","#D8576BFF","#FDC926FF")) +
+  coord_flip() +
+  scale_y_continuous(limits=c(0, 6000)) +
+  labs(x="Clarity", y="Count", fill="Cut Quality") +
+  theme_classic()
+
+```
+
+## 3.3 Histogram
+
+### 3.3.1 stat_bin()
+
+* geom_histogram() vs stat_bin()
+* `geom_histogram()`: This is a high-level function designed specifically to create histograms. It is more user-friendly and combines both the binning (via    `stat_bin()`) and the drawing of bars.
+* `stat_bin()`: This is a lower-level statistical transformation function. It computes the binned counts but does not render any graphical elements directly. It is typically used when you want to customize or separate the statistical computation from the graphical rendering.
+  + Both can be used to create histograms.
+  + `geom_histogram()` internally uses `stat_bin()` to compute binned counts
+  + `stat_bin()`: function that compute the binned counts
+* Use stat_bin()
+  + https://ggplot2.tidyverse.org/reference/geom_histogram.html
+
+```{r}
+?stat_bin
+# compare the histogram by geom_histogram and geom_bin
+ggplot(good.diamonds, aes(x = price)) +
+  stat_bin(aes(y = ..count..), geom = "bar")
+
+ggplot(good.diamonds, aes(x = price)) +
+  geom_histogram()
+
+# The plots should look the same.
+#geom: The geometric object to use display the data. e.g. "bar","point","line"
+```
+
+
+```{r}
+?stat_bin
+ggplot(aes(x=price),data=good.diamonds)+
+  geom_histogram()+
+  stat_bin(aes(label=..count..),geom="text")+
+  labs(x="Price", y="Count") +
+  theme_classic()
+
+#geom: The geometric object to use display the data. e.g. "bar","point","line"
+```
+
+### 3.3.2 Maybe too many bins
+
+```{r}
+ggplot(aes(x=price),data=good.diamonds)+
+  geom_histogram(binwidth = 3000,
+                 fill="white",
+                 color="#D8576BFF")+
+  stat_bin(aes(label=..count..),
+           binwidth=3000,
+           geom="text",
+           vjust=-0.5) +
+  scale_y_continuous(limits=c(0, 21000)) +
+  labs(x="Price", y="Count") +
+  theme_classic()
+```
+
+### 3.3.3 Improve!
+
+* Move the number to other locations? maybe in the middle of the bars?
+* Also look at the x-axis, the numbers do not match with the bins.
+
+```{r}
+ggplot(aes(x=price),data=good.diamonds)+
+  geom_histogram(binwidth = 3000,
+                 boundary=0,
+                 closed="left",
+                 fill="white",
+                 color="#D8576BFF")+
+  stat_bin(aes(label=..count..),
+           binwidth=3000,
+           geom="text",
+           position=position_stack(vjust=0.5),
+           boundary = 0, 
+           closed="left")+
+  scale_x_continuous(breaks=seq(0,max(diamonds$price),3000)) +
+  labs(x="Price", y="Count") +
+  theme_classic()
+
+min(diamonds$price)
+
+# boundary=0: indicates you want to display the histogram beginning from 0.
+
+# closed="right" or "left": Determines which end of each bin is closed.
+# That is, it specifies if a number occurs on the boundary, e.g. 3000, will it be put in the left bar, or the right bar. 
+# right:(0,3000]   left:[0,3000) - Then, if you set closed="right", the counts would change inside bars.
+```
+
+
+
+
+
+### 3.3.4 Color it by another variable
+
+```{r}
+ggplot(aes(x=price),data=good.diamonds)+
+  geom_histogram(aes(fill=cut),
+                 binwidth = 3000,
+                 boundary=0,
+                 closed="left",
+                 color="white")+
+  stat_bin(aes(label=..count.., group=cut),
+           binwidth=3000,
+           geom="text",
+           size=3,
+           position=position_stack(vjust=0.5),
+           boundary = 0, 
+           closed="left")+
+  scale_x_continuous(breaks=seq(0,max(diamonds$price),3000)) +
+  scale_fill_manual(values=c("#7301A8FF","#D8576BFF","#FDC926FF")) +
+  labs(x="Price", y="Count", fill="Cut") +
+  theme_classic()
+
+```
+
+
+
